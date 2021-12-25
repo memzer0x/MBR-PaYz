@@ -87,7 +87,11 @@ int main(int argc, char** argv, char** envp){
     std::vector<std::string> MESSAGE_VEC = {""};
     
     // CLEAR CONSOLE, CHANGE FONT COLOR, PRINT BANNER, RESET FONT COLOR
-    ClearConsole(CONSOLE_HANDLE);
+    #if defined(_WIN32)
+        ClearConsole(CONSOLE_HANDLE);
+    #else
+        ClearConsole();
+    #endif
     #if defined(_WIN32)
         ChangeConsoleFontColor(CONSOLE_HANDLE, FOREGROUND_GREEN);
     #endif
